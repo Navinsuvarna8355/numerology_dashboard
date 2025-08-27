@@ -104,10 +104,3 @@ if submitted:
             st.error("Invalid DOB format. Please use DDMMYYYY.")
     else:
         st.warning("Please enter valid DOB (DDMMYYYY) and Name before analyzing.")
-        if age:
-            st.write(f"Age: {age} years")
-            st.write(f"Current Personal Year: {personal_year}")
-        else:
-            st.error("Invalid DOB format. Please use DDMMYYYY.")
-    else:
-        st.warning("Please enter valid DOB (DDMMYYYY) and Name before analyzing.")
