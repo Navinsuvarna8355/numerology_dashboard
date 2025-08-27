@@ -1,101 +1,111 @@
 import streamlit as st
+import pandas as pd
 from datetime import datetime
+import pytz
 import uuid
 
-# ----------------------------
-# CORE NUMEROLOGY UTILITIES
-# ----------------------------
-def digit_sum(n):
-    while n > 9 and n not in [11, 22, 33]:
-        n = sum(int(d) for d in str(n))
-    return n
+# ===== Config =====
+IST = pytz.timezone("Asia/Kolkata")
 
-def name_to_number(name: str):
-    mapping = {
-        'A':1,'J':1,'S':1,
-        'B':2,'K':2,'T':2,
-        'C':3,'L':3,'U':3,
-        'D':4,'M':4,'V':4,
-        'E':5,'N':5,'W':5,
-        'F':6,'O':6,'X':6,
-        'G':7,'P':7,'Y':7,
-        'H':8,'Q':8,'Z':8,
-        'I':9,'R':9
-    }
-    total = sum(mapping.get(ch.upper(), 0) for ch in name if ch.isalpha())
-    return digit_sum(total)
+# ===== Functions =====
+def calculate_personal_year(dob: datetime, target_date: datetime) -> int:
+    """Return Personal Year number using DOB and target date."""
+    birth_month = dob.month
+    birth_day = dob.day
+    year_sum = sum(int(d) for d in f"{birth_month}{birth_day}{target_date.year}")
+    while year_sum > 9:
+        year_sum = sum(int(d) for d in str(year_sum))
+    return year_sum
 
-def dob_to_life_path(dob_str: str):
-    y, m, d = map(int, dob_str.split('/'))
-    digits = list(str(y) + str(m) + str(d))
-    total = sum(int(x) for x in digits)
-    return digit_sum(total)
+def get_monthly_predictions(personal_year: int) -> pd.DataFrame:
+    """Generate dummy monthly predictions (replace with your Lal Kitab + Lo Shu logic)."""
+    data = []
+    for month in range(1, 13):
+        pred = f"Month {month}: Prediction for PY {personal_year}"
+        remedy = f"Suggested upay for month {month}"
+        data.append({"Month": month, "Prediction": pred, "Remedy": remedy})
+    return pd.DataFrame(data)
 
-# ----------------------------
-# LO SHU MISSING NUMBER LOGIC
-# ----------------------------
-def loshu_missing_numbers(dob_str: str):
-    y, m, d = map(int, dob_str.split('/'))
-    digits = [int(ch) for ch in f"{d}{m}{y}" if ch.isdigit()]
-    present = set(digits)
-    return [n for n in range(1, 10) if n not in present]
+def get_partner_compatibility(py1: int, py2: int) -> str:
+    """Dummy partner compatibility logic (replace with your full numerology rules)."""
+    score = abs(py1 - py2)
+    if score == 0:
+        return "Highly Compatible — Same Personal Year vibes!"
+    elif score in [1, 2]:
+        return "Generally Compatible — Minor adjustments needed."
+    else:
+        return "Challenging — Different cycles, extra effort needed."
 
-def name_contains_missing_digits(name: str, missing_nums: list):
-    mapping = {
-        'A':1,'J':1,'S':1,
-        'B':2,'K':2,'T':2,
-        'C':3,'L':3,'U':3,
-        'D':4,'M':4,'V':4,
-        'E':5,'N':5,'W':5,
-        'F':6,'O':6,'X':6,
-        'G':7,'P':7,'Y':7,
-        'H':8,'Q':8,'Z':8,
-        'I':9,'R':9
-    }
-    name_nums = {mapping.get(ch.upper(), 0) for ch in name if ch.isalpha()}
-    return any(num in name_nums for num in missing_nums)
+def generate_report_html(name: str, py: int, df: pd.DataFrame,
+                         compatibility: str, session_id: str, timestamp: str) -> str:
+    """Return HTML string for print/PDF."""
+    html = f"""
+    <html>
+    <head><meta charset="UTF-8"><title>Numerology Report</title></head>
+    <body>
+        <h2>Numerology Report for {name}</h2>
+        <p><b>Personal Year:</b> {py}</p>
+        <h3>Monthly Predictions & Remedies</h3>
+        {df.to_html(index=False)}
+    """
+    if compatibility:
+        html += f"<h3>Partner Compatibility</h3><p>{compatibility}</p>"
+    html += f"""
+        <hr>
+        <small>Session ID: {session_id} | Generated at: {timestamp}</small>
+    </body></html>
+    """
+    return html
 
-# ----------------------------
-# EXTENDED LAL KITAB REMEDIES (1–33)
-# ----------------------------
-remedies_1_33 = {
-    1: "🌞 Offer water to the rising Sun daily",
-    2: "🪙 Keep a silver coin in your wallet",
-    3: "🌼 Donate yellow on Thursdays",
-    4: "⚫ Avoid black on Saturdays",
-    5: "🐦 Feed birds daily",
-    6: "🍬 Offer sweets to young girls on Fridays",
-    7: "🥥 Keep a coconut in your room",
-    8: "⚖️ Donate black sesame on Saturdays",
-    9: "🤝 Help the needy without expectation",
-    10: "Lead small projects with humility",
-    11: "Meditate nightly; channel intuition",
-    12: "Turn sacrifices into learning",
-    13: "Declutter weekly; respect structure",
-    14: "Moderation in habits and speech",
-    15: "Nurture harmony at home",
-    16: "Practice gratitude; avoid ego battles",
-    17: "Combine ambition with charity",
-    18: "Serve consistently without burnout",
-    19: "Build self‑reliance; share credit",
-    20: "Protect rest; act with patience",
-    21: "Express creatively in teams",
-    22: "Plan a community‑impact project",
-    23: "Travel with purpose; verify info",
-    24: "Balance care with self‑respect",
-    25: "Research deeply before acting",
-    26: "Lead ethically; mentor others",
-    27: "Teach or volunteer weekly",
-    28: "Start ventures with discipline",
-    29: "Use emotional intelligence; decide firmly",
-    30: "Express, then refine",
-    31: "Design long‑lasting systems",
-    32: "Influence responsibly; think long‑term",
-    33: "Guide compassionately; protect your energy"
-}
+# ===== Streamlit UI =====
+st.title("🔢 Numerology Predictions Dashboard")
 
-def get_remedy(num):
-    return remedies_1_33.get(num, remedies_1_33.get(digit_sum(num), "No remedy found"))
+# --- User Input ---
+name = st.text_input("🪪 Your Name")
+dob_input = st.date_input("📅 Your Date of Birth")
+
+# Partner compatibility toggle
+include_partner = st.checkbox("Include Partner Compatibility Module")
+partner_name = partner_dob = None
+if include_partner:
+    partner_name = st.text_input("Partner Name")
+    partner_dob = st.date_input("Partner Date of Birth")
+
+# --- Core Logic ---
+today = datetime.now(IST)
+
+if dob_input and name:
+    personal_year = calculate_personal_year(dob_input, today)
+    st.subheader(f"📅 Personal Year: {personal_year}")
+
+    # Monthly Predictions
+    df_pred = get_monthly_predictions(personal_year)
+    st.markdown("### 📆 Monthly Predictions & Remedies")
+    st.dataframe(df_pred, use_container_width=True)
+
+    # Partner compatibility if toggled
+    compatibility_result = ""
+    if include_partner and partner_dob:
+        partner_py = calculate_personal_year(partner_dob, today)
+        compatibility_result = get_partner_compatibility(personal_year, partner_py)
+        st.markdown("### ❤️ Partner Compatibility")
+        st.info(f"{partner_name} → {compatibility_result}")
+
+    # Footer with Audit Info
+    session_id = uuid.uuid4().hex[:8].upper()
+    timestamp_ist = today.strftime("%Y-%m-%d %H:%M:%S %Z")
+    st.markdown("---")
+    st.caption(f"**Session ID:** {session_id} | **Generated at:** {timestamp_ist}")
+
+    # Print/PDF-ready Report
+    if st.button("🖨️ Generate Print/PDF View"):
+        html_report = generate_report_html(name, personal_year, df_pred,
+                                           compatibility_result, session_id, timestamp_ist)
+        st.markdown("### 📄 Report Preview")
+        st.components.v1.html(html_report, height=500, scrolling=True)
+
+else:
+    st.warning("Please enter your name and Date of Birth to proceed.")
 
 # ----------------------------
 # BABY NAME POOLS
