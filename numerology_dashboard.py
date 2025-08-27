@@ -421,6 +421,331 @@ if st.button("Generate Full Report", use_container_width=True):
             components.html(html_report, height=600, scrolling=True)
 
         except Exception as e:
+            st.error(f"An unexpected error occurred: {e}. Please check the input and try again.")# ----------------------------
+# Extended Lal Kitab remedies (1–33)
+# ----------------------------
+REMEDIES_1_33 = {
+    1: ["🌞 Offer water to the rising Sun daily", "Take decisive, ethical actions"],
+    2: ["🪙 Keep a silver coin in wallet", "Prioritize rest and hydration"],
+    3: ["🌼 Donate yellow on Thursdays", "Teach or learn on a schedule"],
+    4: ["🧹 Declutter weekly", "Avoid all-black on Saturdays"],
+    5: ["🐦 Feed birds daily", "Practice breathwork or walks"],
+    6: ["🍬 Offer sweets on Fridays", "Nurture harmony at home"],
+    7: ["🥥 Keep a clean coconut; replace monthly", "Reflect and study with purpose"],
+    8: ["⚖️ Donate black sesame on Saturdays", "Audit money weekly; be fair"],
+    9: ["🤝 Serve without expectation", "Channel energy via disciplined fitness"],
+    10: ["Lead small projects with humility", "Let results speak"],
+    11: ["Nightly meditation", "Support a mentor/community"],
+    12: ["Turn sacrifice into learning", "Avoid victim mindset"],
+    13: ["Declutter + ship small improvements", "Respect structure/rules"],
+    14: ["Moderate habits/spend/speech", "Avoid shortcuts"],
+    15: ["Beautify a corner weekly", "Balance care with boundaries"],
+    16: ["Daily gratitude", "Avoid ego battles and risky speculation"],
+    17: ["Blend ambition with charity", "Track and celebrate ethical wins"],
+    18: ["Serve the vulnerable", "Set healthy help boundaries"],
+    19: ["Cultivate self-reliance", "Share credit generously"],
+    20: ["Protect sleep", "Let timing mature; review calmly"],
+    21: ["Co-create in teams", "Avoid dramatization; focus outcomes"],
+    22: ["Plan community-impact project", "Ground vision with weekly ops"],
+    23: ["Travel with purpose", "Verify information; write daily"],
+    24: ["Dependable care routine", "Balance giving with self-respect"],
+    25: ["Research then act", "Spiritual study with logic"],
+    26: ["Lead ethically; mentor", "Transparent money practices"],
+    27: ["Teach or volunteer weekly", "Empathy + disciplined study"],
+    28: ["Pilot ventures with discipline", "Invite contrarian feedback"],
+    29: ["Practice emotional boundaries", "Set deadlines for decisions"],
+    30: ["Express then refine", "Teach what you learn"],
+    31: ["Design lasting systems", "Protect focus and timelines"],
+    32: ["Influence responsibly", "Choose long-term plays"],
+    33: ["Guide compassionately", "Daily compassion; protect energy"],
+}
+
+def get_remedies(number: int) -> list[str]:
+    """Retrieves remedies for a given number."""
+    if number in REMEDIES_1_33:
+        return REMEDIES_1_33[number]
+    base = digit_sum(number)
+    return REMEDIES_1_33.get(base, ["Act ethically, reflect daily, serve consistently."])
+
+# ----------------------------
+# Name pools and dual-filter
+# ----------------------------
+GIRL_NAMES = ["Anaya", "Ira", "Siya", "Aanya", "Myra", "Pari", "Diya", "Kiara", "Riya", "Aarohi"]
+BOY_NAMES = ["Aarav", "Vihaan", "Vivaan", "Reyansh", "Advik", "Devansh", "Arjun", "Kabir", "Atharv", "Yuvraj"]
+
+FAVOURABLE_ROOTS = {1, 3, 5, 6}
+
+def dual_filter_names(pool: list[str], missing_nums: list[int]) -> list[dict]:
+    """
+    Keeps names whose root is in {1,3,5,6} and which include at least one missing Lo Shu digit vibration.
+    Returns list of dicts: {name, root, patched: bool}
+    """
+    out = []
+    for nm in pool:
+        root = name_to_number(nm)
+        patched = name_contains_any_missing_digit(nm, missing_nums)
+        if root in FAVOURABLE_ROOTS and patched:
+            out.append({"name": nm, "root": root, "patched": patched})
+    return out
+
+def get_baby_name_pool(gender: str) -> list[str]:
+    """Selects the correct name pool based on gender."""
+    if gender == "Girl":
+        return GIRL_NAMES
+    if gender == "Boy":
+        return BOY_NAMES
+    return GIRL_NAMES + BOY_NAMES
+
+# ----------------------------
+# Naam Sudhaar (1-letter prefix/suffix to match Life Path)
+# ----------------------------
+def naam_sudhaar(name: str, target: int, max_suggestions: int = 20) -> list[str]:
+    """Generates name suggestions by adding a single letter to match a target number."""
+    suggestions = []
+    letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    seen = set()
+    for ch in letters:
+        cand1 = name + ch
+        cand2 = ch + name
+        for cand in (cand1, cand2):
+            if cand not in seen and name_to_number(cand) == target:
+                suggestions.append(cand)
+                seen.add(cand)
+            if len(suggestions) >= max_suggestions:
+                return suggestions
+    return suggestions
+
+# ----------------------------
+# Personal year and monthly themes
+# ----------------------------
+MONTH_MEANINGS = {
+    1:"New beginnings, initiatives",
+    2:"Partnerships, patience",
+    3:"Creativity, expression",
+    4:"Hard work, stability",
+    5:"Change, freedom",
+    6:"Responsibility, harmony",
+    7:"Reflection, learning",
+    8:"Power, recognition",
+    9:"Completion, service"
+}
+
+def personal_year(life_path: int, year: int) -> int:
+    """Calculates the personal year number."""
+    return digit_sum(life_path + digit_sum(year))
+
+def personal_months(py: int, start_month: int, start_year: int) -> list[tuple]:
+    """Calculates personal month numbers and themes for the next 12 months."""
+    months = []
+    for i in range(12):
+        m = (start_month + i - 1) % 12 + 1
+        y = start_year if m >= start_month else start_year + 1
+        pm = digit_sum(py + m)
+        months.append((m, y, pm, MONTH_MEANINGS.get(pm, "—")))
+    return months
+
+def get_compatibility_score(lp: int, other_num: int) -> int:
+    """Calculates a simple compatibility score based on numerology alignment."""
+    return max(0, 100 - 10 * abs(lp - other_num))
+
+# ----------------------------
+# HTML report generator
+# ----------------------------
+def generate_report_html(ctx: dict) -> str:
+    """Generates a full HTML report from a context dictionary."""
+    remedy_items = "".join(f"<li>{r}</li>" for r in ctx.get("remedies", []))
+    missing_str = ", ".join(str(x) for x in ctx.get("missing_nums", [])) if ctx.get("missing_nums") else "None"
+
+    baby_block = ""
+    if ctx.get("baby_names"):
+        items = "".join(
+            f"<li>{bn['name']} → {bn['root']} "
+            f"{' (patch ✔)' if bn['patched'] else ''}</li>"
+            for bn in ctx["baby_names"]
+        )
+        baby_block = f"""
+        <div class="report-section">
+            <h2>Lucky baby names</h2>
+            <p class="muted">Names with a favorable root (1, 3, 5, or 6) that also contain a missing Lo Shu digit.</p>
+            <ul>{items}</ul>
+        </div>
+        """
+
+    sudhaar_block = ""
+    if ctx.get("sudhaar"):
+        s_items = "".join(f"<li>{s} → {ctx['life_path']}</li>" for s in ctx["sudhaar"])
+        sudhaar_block = f"""
+        <div class="report-section">
+            <h2>Harmonized name suggestions</h2>
+            <p class="muted">Suggestions to align your name's numerological root with your Life Path number.</p>
+            <ul>{s_items}</ul>
+        </div>
+        """
+
+    months_block = ""
+    if ctx.get("months"):
+        m_items = "".join(f"<li>{m:02d}/{y}: {mean} (PM {pm})</li>" for (m, y, pm, mean) in ctx["months"])
+        months_block = f"""
+        <div class="report-section">
+            <h2>Personal year and monthly themes</h2>
+            <p class="muted">Year: {ctx['year']} • Personal Year: {ctx['pyear']}</p>
+            <p>Understand the energetic theme of each month to plan accordingly.</p>
+            <ul>{m_items}</ul>
+        </div>
+        """
+    
+    compat_block = ""
+    if ctx.get("compat"):
+        c_items = "".join(f"<li>{n} → {num} (score: {score}%)</li>" for n, num, score in ctx["compat"])
+        compat_block = f"""
+        <div class="report-section">
+            <h2>Name checks & compatibility</h2>
+            <p class="muted">A simple compatibility score based on alignment with your Life Path.</p>
+            <ul>{c_items}</ul>
+        </div>
+        """
+
+    html = f"""
+    <!doctype html>
+    <html><head>
+    <meta charset="utf-8"/>
+    <title>Numerology Report</title>
+    <style>
+        body {{ font-family: -apple-system, Segoe UI, Roboto, Arial; color:#111; margin:20px; font-size: 14px; line-height: 1.6; }}
+        h1 {{ font-size: 24px; margin: 0 0 8px; }}
+        h2 {{ font-size: 18px; margin: 18px 0 8px; border-bottom: 1px solid #ddd; padding-bottom: 4px; }}
+        .header {{ border-bottom:1px solid #e5e5e5; padding-bottom:8px; margin-bottom:14px; }}
+        .meta {{ color:#555; font-size: 12px; }}
+        .grid {{ display:flex; gap:12px; flex-wrap:wrap; }}
+        .card {{ border:1px solid #eee; border-radius:8px; padding:10px 12px; background-color: #f9f9f9; }}
+        ul {{ margin: 6px 0 12px 20px; }}
+        li {{ margin-bottom: 4px; }}
+        .footer {{ border-top:1px solid #e5e5e5; margin-top:18px; padding-top:6px; font-size:12px; color:#555; text-align: center; }}
+        .pagebreak {{ page-break-before: always; }}
+        .muted {{ color:#777; font-style: italic; font-size: 12px; }}
+        .report-section {{ margin-bottom: 24px; }}
+    </style>
+    </head>
+    <body>
+        <div class="header">
+        <h1>Numerology Report for {ctx.get('client_name', 'Client')}</h1>
+        <div class="meta">{ctx.get('brand')} • Generated: {ctx.get('timestamp')} • Session: {ctx.get('session_id')}</div>
+        </div>
+
+        <div class="grid">
+        <div class="card">
+            <div><b>DOB:</b> {ctx.get('dob_str', '—')}</div>
+            <div><b>Life Path:</b> {ctx.get('life_path', '—')}</div>
+            <div><b>Name Number:</b> {ctx.get('name_num', '—')}</div>
+            <div><b>Lo Shu missing:</b> {missing_str}</div>
+            <div><b>Kua Number:</b> {ctx.get('kua_number', '—')}</div>
+        </div>
+        </div>
+
+        <div class="report-section">
+            <h2>Lal Kitab aligned remedies</h2>
+            <p class="muted">Personalized guidance based on your numerological profile.</p>
+            <ul>{remedy_items}</ul>
+        </div>
+
+        {baby_block}
+        {sudhaar_block}
+        {compat_block}
+
+        <div class="pagebreak"></div>
+        {months_block}
+
+        <div class="footer">Confidential • © {ctx.get('brand')}</div>
+    </body></html>
+    """
+    return html
+
+# ----------------------------
+# UI
+# ----------------------------
+st.title("🔮 Numerology Pro – Full Report Mode")
+
+col1, col2 = st.columns(2)
+with col1:
+    full_name = st.text_input("Full Name (for checking)")
+with col2:
+    dob = st.date_input("Date of Birth", value=date(1990,1,1), min_value=date(1900,1,1))
+
+gender = st.radio("👶 Gender (for Kua & Baby suggestions)", ["Boy", "Girl", "Any"], index=0)
+
+if st.button("Generate Full Report", use_container_width=True):
+    if not full_name:
+        st.error("Please enter a full name.")
+    else:
+        try:
+            # Core numbers
+            lp = life_path_from_date(dob)
+            nn = name_to_number(full_name)
+            missing = loshu_missing_numbers_from_date(dob)
+            sess_id = uuid.uuid4().hex[:8].upper()
+            now_str = ist_now_str()
+
+            # New: Kua Number
+            kua_num = kua_number_from_dob(dob, gender)
+
+            # Additional report data
+            baby_names_pool = get_baby_name_pool(gender)
+            baby_suggestions = dual_filter_names(baby_names_pool, missing)
+            name_corrections = naam_sudhaar(full_name, lp, max_suggestions=20)
+
+            # Personal year and months
+            current_year = ist_now().year
+            py = personal_year(lp, current_year)
+            months_data = personal_months(py, start_month=ist_now().month, start_year=current_year)
+
+            # Context for HTML report
+            ctx = {
+                "brand": "Numerology Pro",
+                "client_name": full_name,
+                "dob_str": dob.strftime("%Y/%m/%d"),
+                "life_path": lp,
+                "name_num": nn,
+                "missing_nums": missing,
+                "kua_number": kua_num,
+                "remedies": get_remedies(lp),
+                "baby_names": baby_suggestions,
+                "sudhaar": name_corrections,
+                "year": current_year,
+                "pyear": py,
+                "months": months_data,
+                "session_id": sess_id,
+                "timestamp": now_str,
+                "compat": []
+            }
+
+            st.subheader("📜 Report Summary")
+            st.write(f"**Life Path:** {lp} | **Name Number:** {nn} | **Lo Shu missing digits:** {', '.join(map(str, missing)) if missing else 'None'} | **Kua Number:** {kua_num}")
+            st.caption(f"Session: {sess_id} • {now_str}")
+            st.markdown("---")
+
+            st.markdown("### 🔍 Check compatibility")
+            other = st.text_input("Enter a name to check compatibility with", key="compat_name")
+            if other:
+                other_num = name_to_number(other)
+                score = get_compatibility_score(lp, other_num)
+                st.info(f"**{other}** → **{other_num}** | Compatibility score vs Life Path: **{score}%**")
+                ctx["compat"].append((other, other_num, score))
+
+            # Generate HTML report
+            st.markdown("---")
+            st.subheader("📄 Export & Preview")
+            html_report = generate_report_html(ctx)
+            st.download_button(
+                "Download print-ready HTML",
+                data=html_report.encode("utf-8"),
+                file_name=f"{full_name.replace(' ','_')}_numerology_report.html",
+                mime="text/html",
+                use_container_width=True
+            )
+            st.markdown("Preview of the generated report:")
+            components.html(html_report, height=600, scrolling=True)
+
+        except Exception as e:
             st.error(f"An unexpected error occurred: {e}. Please check the input and try again.")    25: ["Research then act", "Spiritual study with logic"],
     26: ["Lead ethically; mentor", "Transparent money practices"],
     27: ["Teach or volunteer weekly", "Empathy + disciplined study"],
