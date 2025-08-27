@@ -1,8 +1,11 @@
 import streamlit as st
 import pandas as pd
-from datetime import date
+from datetime import datetime
 
-# --- Config ---
+# --- IST Timestamp ---
+ist_now = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+
+# --- Configurable Parameters ---
 missing_numbers = {
     2: "Keep a silver coin with you",
     3: "Chant Saraswati mantra daily",
@@ -23,45 +26,48 @@ traits = {
     8: "Responsibility"
 }
 
-# --- UI ---
-st.title("🔢 Missing Number Remedies & Growth Tracker")
+# --- UI Header ---
+st.title("🔢 Numerology Dashboard")
+st.caption(f"🕒 IST Timestamp: {ist_now}")
 
-# Optional compatibility toggle
-compat_enabled = st.checkbox("Enable Compatibility Module (Optional)", value=False)
+# --- Optional Modules ---
+compat_enabled = st.checkbox("🔒 Enable Compatibility Module", value=False)
+remedy_log_enabled = st.checkbox("🧘 Enable Remedy Tracker", value=True)
 
-# View selector
-view = st.radio("Select View", ["Daily", "Monthly"])
-today = date.today().strftime("%Y-%m-%d")
+# --- View Selector ---
+view = st.radio("📅 Select View", ["Daily", "Monthly"])
 
-# Remedy logger
-st.subheader("🧘 Remedy Practice Log")
-remedy_logs = []
+# --- Remedy Tracker ---
+if remedy_log_enabled:
+    st.subheader("🧘 Remedy Practice Log")
+    remedy_logs = []
 
-for num, remedy in missing_numbers.items():
-    practiced = st.checkbox(f"{traits[num]} ({num}): {remedy}", key=f"remedy_{num}")
-    remedy_logs.append({
-        "date": today,
-        "number": num,
-        "trait": traits[num],
-        "remedy": remedy,
-        "status": "Practiced" if practiced else "Missed"
-    })
+    for num, remedy in missing_numbers.items():
+        practiced = st.checkbox(f"{traits[num]} ({num}): {remedy}", key=f"remedy_{num}")
+        remedy_logs.append({
+            "timestamp": ist_now,
+            "view": view,
+            "number": num,
+            "trait": traits[num],
+            "remedy": remedy,
+            "status": "Practiced" if practiced else "Missed"
+        })
 
-# Convert to DataFrame for audit
-df_log = pd.DataFrame(remedy_logs)
+    # --- Fallback Logic ---
+    if not remedy_logs:
+        st.warning("⚠️ No remedies logged. Please check your config or enable tracking.")
+    else:
+        df_log = pd.DataFrame(remedy_logs)
+        st.subheader(f"📈 {view} Growth Tracker")
+        for entry in remedy_logs:
+            icon = "✅" if entry["status"] == "Practiced" else "❌"
+            st.write(f"{entry['trait']} ({entry['number']}): {icon}")
 
-# Display tracker
-st.subheader(f"📈 {view} Growth Tracker")
-for entry in remedy_logs:
-    status_icon = "✅" if entry["status"] == "Practiced" else "❌"
-    st.write(f"{entry['trait']} ({entry['number']}): {status_icon}")
+        with st.expander("📜 View Audit Log"):
+            st.dataframe(df_log)
 
-# Optional: show full log
-with st.expander("📜 View Audit Log"):
-    st.dataframe(df_log)
-
-# Optional compatibility logic
+# --- Compatibility Module ---
 if compat_enabled:
     st.subheader("💞 Compatibility Checker")
     partner_dob = st.text_input("Enter Partner's DOB (DD-MM-YYYY)")
-    st.write("🔒 Compatibility logic goes here (toggleable, respects privacy)")
+    st.write("🔍 Compatibility logic placeholder — respects privacy and is toggleable.")
