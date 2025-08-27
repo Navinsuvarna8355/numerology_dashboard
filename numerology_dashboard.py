@@ -13,7 +13,7 @@ with col1:
 with col2:
     name = st.text_input("Enter Full Name")
 
-# Submit Button
+partner_name = st.text_input("Enter Partner's Name (for Compatibility Check)")
 submitted = st.button("🔍 Analyze")
 
 # ------------------ CORE FUNCTIONS ------------------
@@ -89,13 +89,21 @@ if submitted:
         st.write(career_suggestions(grid))
 
         st.subheader("❤️ Compatibility Checker")
-        partner_name = st.text_input("Enter Partner's Name")
         if partner_name:
             score = compatibility_score(name, partner_name)
-            st.write(f"Compatibility Score: {score}/9")
+            st.write(f"Compatibility Score with {partner_name}: {score}/9")
+        else:
+            st.info("Enter partner's name to check compatibility.")
 
         st.subheader("📈 Personal Growth Tracker")
         age, personal_year = growth_tracker(dob)
+        if age:
+            st.write(f"Age: {age} years")
+            st.write(f"Current Personal Year: {personal_year}")
+        else:
+            st.error("Invalid DOB format. Please use DDMMYYYY.")
+    else:
+        st.warning("Please enter valid DOB (DDMMYYYY) and Name before analyzing.")
         if age:
             st.write(f"Age: {age} years")
             st.write(f"Current Personal Year: {personal_year}")
