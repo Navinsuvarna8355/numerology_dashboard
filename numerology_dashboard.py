@@ -1,101 +1,70 @@
 import streamlit as st
-from datetime import datetime
-import pytz
+from datetime import date, datetime
 
-# --- Config Toggles ---
-compat_enabled = st.sidebar.checkbox("Enable Compatibility Checker", value=False)
-log_enabled = st.sidebar.checkbox("Enable Daily/Monthly Logs", value=True)
-lusho_enabled = st.sidebar.checkbox("Enable Lusho Grid & Remedies", value=True)
+# Title
+st.title("🔢 Numerology Dashboard")
 
-# --- IST Timestamp ---
-def get_ist_timestamp():
-    ist = pytz.timezone('Asia/Kolkata')
-    return datetime.now(ist).strftime("%Y-%m-%d %H:%M:%S")
+# Date of Birth Input (with backdate support)
+user_dob = st.date_input(
+    "📅 Your Date of Birth",
+    value=date(1990, 1, 1),
+    min_value=date(1900, 1, 1),
+    max_value=date.today()
+)
 
-# --- Life Path Calculator ---
-def calculate_life_path(dob):
-    digits = [int(d) for d in dob.strftime("%d%m%Y")]
-    total = sum(digits)
-    while total > 9 and total not in [11, 22]:
-        total = sum([int(d) for d in str(total)])
-    return total
+# IST Timestamp Logging
+ist_now = datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+st.write(f"🕒 Logged at (IST): {ist_now}")
 
-# --- Lusho Grid Generator ---
+# Lusho Grid Placeholder
 def generate_lusho_grid(dob):
-    digits = [int(d) for d in dob.strftime("%d%m%Y")]
+    digits = [int(d) for d in dob.strftime("%d%m%Y") if d.isdigit()]
     grid = {str(i): digits.count(i) for i in range(1, 10)}
     return grid
 
-# --- Lal Kitab Remedies ---
-def suggest_remedies(grid):
-    missing = [num for num, count in grid.items() if count == 0]
-    remedies = {
-        "1": "Offer water to rising sun daily.",
-        "2": "Keep a silver coin with you.",
-        "3": "Chant Saraswati mantra daily.",
-        "4": "Avoid wearing grey; use green.",
-        "5": "Donate green vegetables on Wednesdays.",
-        "6": "Feed cows or donate white items.",
-        "7": "Meditate daily and avoid alcohol.",
-        "8": "Help elderly or donate black sesame.",
-        "9": "Donate red clothes or lentils on Tuesdays."
-    }
-    return {num: remedies[num] for num in missing}
+# Display Lusho Grid
+grid = generate_lusho_grid(user_dob)
+st.subheader("🔲 Lusho Grid")
+for num in range(1, 10):
+    st.write(f"{num}: {'●' * grid[str(num)] if grid[str(num)] else '—'}")
 
-# --- Logger ---
-def log_event(label, dob, life_path, grid=None):
-    if log_enabled:
-        timestamp = get_ist_timestamp()
-        entry = f"{timestamp} | {label} | DOB: {dob.strftime('%d-%m-%Y')} | Life Path: {life_path}"
-        if grid:
-            entry += f" | Lusho Grid: {grid}"
-        with open(f"{label}_log.txt", "a") as f:
-            f.write(entry + "\n")
-        st.text(f"📁 Logged: {entry}")
+# Lal Kitab Remedies (basic example)
+def get_remedies(dob):
+    year = dob.year
+    if year % 9 == 0:
+        return ["🪔 Wear copper on Tuesday", "🌿 Offer jaggery to monkeys"]
+    elif year % 4 == 0:
+        return ["🪙 Keep silver with you", "🧂 Avoid salty food on Thursdays"]
+    else:
+        return ["🧘 Practice meditation daily", "📿 Chant your root number mantra"]
 
-# --- Main App ---
-st.title("🔮 Numerology Dashboard")
+# Display Remedies
+st.subheader("🧿 Suggested Remedies")
+for remedy in get_remedies(user_dob):
+    st.write(f"- {remedy}")
 
-user_name = st.text_input("Your Name", placeholder="Optional")
-user_dob = st.date_input("Your Date of Birth")
+# Optional Compatibility Checker
+if st.checkbox("🔗 Enable Compatibility Checker (Optional)"):
+    partner_dob = st.date_input(
+        "Partner's Date of Birth",
+        value=date(1990, 1, 1),
+        min_value=date(1900, 1, 1),
+        max_value=date.today()
+    )
+    def check_compatibility(dob1, dob2):
+        sum1 = sum([int(d) for d in dob1.strftime("%d%m%Y")])
+        sum2 = sum([int(d) for d in dob2.strftime("%d%m%Y")])
+        return abs(sum1 - sum2) % 9
 
-if user_dob:
-    user_lp = calculate_life_path(user_dob)
-    st.write(f"🧮 Your Life Path Number: {user_lp}")
-    log_event("User", user_dob, user_lp)
+    compatibility_score = check_compatibility(user_dob, partner_dob)
+    st.write(f"💞 Compatibility Score: {compatibility_score}/9")
 
-    if lusho_enabled:
-        st.subheader("🧱 Lusho Grid & Remedies")
-        user_grid = generate_lusho_grid(user_dob)
-        st.write("🔢 Your Lusho Grid:", user_grid)
+# Daily/Monthly Logs (Placeholder)
+st.subheader("📘 Logs")
+st.write("✅ Daily and monthly remedy logs will be auto-generated and exportable in future versions.")
 
-        remedies = suggest_remedies(user_grid)
-        if remedies:
-            st.warning("⚠️ Missing Numbers Detected:")
-            for num, remedy in remedies.items():
-                st.write(f"🔹 {num}: {remedy}")
-        else:
-            st.success("✅ No missing numbers. Balanced grid.")
-
-        log_event("User", user_dob, user_lp, user_grid)
-
-# --- Compatibility Module ---
-if compat_enabled:
-    st.subheader("💞 Compatibility Checker")
-
-    partner_name = st.text_input("Partner's Name", placeholder="Optional")
-    partner_dob = st.date_input("Partner's DOB", key="partner_dob")
-
-    if partner_dob:
-        partner_lp = calculate_life_path(partner_dob)
-        st.write(f"🧮 {partner_name or 'Partner'}'s Life Path Number: {partner_lp}")
-        log_event("Partner", partner_dob, partner_lp)
-
-        # Compatibility Logic
-        diff = abs(user_lp - partner_lp)
-        if diff in [0, 1, 2]:
-            st.success("✅ High Compatibility: Strong resonance and shared growth potential.")
-        elif diff in [3, 4]:
+# Footer
+st.caption("Built with clarity, control, and modularity by Navinn 🧠")
             st.info("⚖️ Moderate Compatibility: Complementary traits, may need conscious effort.")
         else:
             st.warning("❌ Low Compatibility: Divergent paths, requires deep understanding.")
