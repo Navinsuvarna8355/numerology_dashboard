@@ -1,101 +1,104 @@
 import streamlit as st
-from datetime import date, datetime
+from datetime import datetime
 
-# --- Letter Map (Chaldean) ---
-letter_map = {
-    'A':1,'I':1,'J':1,'Q':1,'Y':1,
-    'B':2,'K':2,'R':2,
-    'C':3,'G':3,'L':3,'S':3,
-    'D':4,'M':4,'T':4,
-    'E':5,'H':5,'N':5,'X':5,
-    'U':6,'V':6,'W':6,
-    'O':7,'Z':7,
-    'F':8,'P':8
+# --- Core Numerology Functions ---
+def name_to_number(name: str) -> int:
+    mapping = {
+        'A':1,'J':1,'S':1,
+        'B':2,'K':2,'T':2,
+        'C':3,'L':3,'U':3,
+        'D':4,'M':4,'V':4,
+        'E':5,'N':5,'W':5,
+        'F':6,'O':6,'X':6,
+        'G':7,'P':7,'Y':7,
+        'H':8,'Q':8,'Z':8,
+        'I':9,'R':9
+    }
+    total = sum(mapping.get(ch.upper(), 0) for ch in name if ch.isalpha())
+    while total > 9 and total not in [11, 22, 33]:
+        total = sum(int(d) for d in str(total))
+    return total
+
+def dob_to_life_path(dob_str: str) -> int:
+    y, m, d = map(int, dob_str.split('/'))
+    digits = list(str(y) + str(m) + str(d))
+    total = sum(int(dig) for dig in digits)
+    while total > 9 and total not in [11, 22, 33]:
+        total = sum(int(d) for d in str(total))
+    return total
+
+# --- Lal Kitab Remedies (sample; expand as needed) ---
+lal_kitab_remedies = {
+    1: "Offer water to the rising Sun daily 🌞",
+    2: "Keep a silver coin in your wallet for harmony 🪙",
+    3: "Donate yellow items on Thursdays 🌼",
+    4: "Avoid black clothing on Saturdays ⚫",
+    5: "Feed birds daily 🐦",
+    6: "Offer sweets to young girls on Fridays 🍬",
+    7: "Keep a piece of coconut in your room 🥥",
+    8: "Donate black sesame seeds on Saturdays ⚫",
+    9: "Help the needy without expectation 🤝"
 }
 
-# --- Utilities ---
-def digit_sum(n):
-    while n > 9:
-        n = sum(int(d) for d in str(n))
-    return n
+# --- Name Pools ---
+girl_names = ["Anaya", "Ira", "Siya", "Aanya", "Myra", "Pari", "Diya", "Kiara", "Riya", "Aarohi"]
+boy_names  = ["Aarav", "Vihaan", "Vivaan", "Reyansh", "Advik", "Devansh", "Arjun", "Kabir", "Atharv", "Yuvraj"]
 
-def name_to_number(name):
-    return digit_sum(sum(letter_map.get(ch.upper(), 0) for ch in name if ch.isalpha()))
+def suggest_names_by_gender(life_path: int, gender: str):
+    if gender == "Girl":
+        pool = girl_names
+    elif gender == "Boy":
+        pool = boy_names
+    else:
+        pool = girl_names + boy_names
+    return [n for n in pool if name_to_number(n) == life_path]
 
-def get_missing_numbers(dob):
-    all_nums = set(str(i) for i in range(1, 10))
-    dob_digits = set(d for d in dob.strftime("%d%m%Y"))
-    return sorted(list(all_nums - dob_digits))
+# --- Streamlit App ---
+st.title("🔢 Numerology Pro – Full Report Mode")
 
-def lal_kitab_remedies(dob, life_path, name_num=None):
-    remedies = []
-    life_path_map = {
-        1: "🌞 Offer water to the rising Sun daily",
-        2: "🌙 Keep a silver coin in your wallet",
-        3: "📿 Wear yellow on Thursdays",
-        4: "🪔 Light mustard oil lamp under a peepal tree on Saturdays",
-        5: "🪙 Donate green vegetables on Wednesdays",
-        6: "🎁 Donate white clothes on Fridays",
-        7: "📚 Read spiritual texts daily",
-        8: "⚖️ Feed black dogs on Saturdays",
-        9: "🍎 Donate red fruits on Tuesdays"
-    }
-    remedies.append(life_path_map.get(life_path, ""))
-    missing_map = {
-        '1': "🪔 Keep a copper coin in your pocket",
-        '2': "🌿 Plant tulsi at home",
-        '3': "📿 Chant ‘Om Namah Shivaya’ 108 times",
-        '4': "💡 Keep a small piece of silver with you",
-        '5': "🚶 Visit a holy place once a year",
-        '6': "🥛 Donate milk on Mondays",
-        '7': "📚 Meditate 15 mins daily",
-        '8': "⚖️ Feed black dogs or crows on Saturdays",
-        '9': "🍎 Donate red lentils or fruits on Tuesdays"
-    }
-    for m in get_missing_numbers(dob):
-        remedies.append(missing_map[m])
-    if name_num and name_num != life_path:
-        remedies.append("🔮 Wear a copper bracelet for 43 days")
-        remedies.append("🌿 Keep basil plant at home")
-    return [r for r in remedies if r]
+full_name = st.text_input("Enter Full Name")
+dob = st.text_input("Enter Date of Birth (YYYY/MM/DD)")
 
-def suggest_names(life_path):
-    sample_names = ["Aarav", "Vihaan", "Anaya", "Ira", "Vivaan", "Siya", "Reyansh", "Aanya", "Advik", "Myra", "Devansh", "Pari"]
-    return [n for n in sample_names if name_to_number(n) == life_path]
+gender = st.radio("👶 Select Baby Gender", ["Girl", "Boy", "Any"], index=0)
 
-def naam_sudhaar(name, life_path):
-    alphabet = list(letter_map.keys())
-    suggestions = []
-    for letter in alphabet:
-        if name_to_number(name + letter) == life_path:
-            suggestions.append(name + letter)
-        if name_to_number(letter + name) == life_path:
-            suggestions.append(letter + name)
-    return sorted(set(suggestions))
+if st.button("Generate Full Report"):
+    if full_name and dob:
+        life_path = dob_to_life_path(dob)
+        name_num = name_to_number(full_name)
 
-def yearly_cycle(life_path):
-    current_year = datetime.now().year
-    return current_year, digit_sum(life_path + digit_sum(current_year))
+        st.subheader("📜 Numerology Report")
+        st.write(f"**Name Number:** {name_num}")
+        st.write(f"**Life Path Number:** {life_path}")
 
-def monthly_cycles(personal_year):
-    current_month = datetime.now().month
-    current_year = datetime.now().year
-    months = []
-    meanings = {
-        1:"New beginnings, initiatives",
-        2:"Partnerships, patience",
-        3:"Creativity, expression",
-        4:"Hard work, stability",
-        5:"Change, freedom",
-        6:"Responsibility, harmony",
-        7:"Reflection, learning",
-        8:"Power, recognition",
-        9:"Completion, service"
-    }
-    for i in range(12):
-        month_num = (current_month + i - 1) % 12 + 1
-        year_for_month = current_year if month_num >= current_month else current_year + 1
-        pm = digit_sum(personal_year + month_num)
+        # Lal Kitab Remedy
+        remedy = lal_kitab_remedies.get(life_path, "No remedy found — update your remedy list.")
+        st.markdown(f"### 🔮 Lal Kitab Remedy for Life Path {life_path}:")
+        st.info(remedy)
+
+        # Baby Names
+        st.markdown(f"### 👶 Lucky Baby Names (Life Path {life_path}):")
+        suggestions = suggest_names_by_gender(life_path, gender)
+        if suggestions:
+            selected_name = st.selectbox("Select from suggestions", suggestions)
+            st.success(f"Selected: {selected_name} → {name_to_number(selected_name)}")
+        else:
+            st.warning("No matching names found — try changing gender or expanding name pool.")
+
+        # Compatibility Checker
+        if st.checkbox("🔍 Check Existing Name Compatibility"):
+            existing_name = st.text_input("Enter existing name to check:")
+            if existing_name:
+                st.info(f"Name {existing_name} has number {name_to_number(existing_name)}")
+
+        # Name Correction
+        if st.checkbox("✏️ Suggest Name Correction"):
+            desired_num = st.number_input("Enter desired name number", 1, 9, value=life_path)
+            st.write("Try modifying letters to match target number:", desired_num)
+
+        # IST Timestamp
+        st.caption(f"Report generated on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} IST")
+    else:
+        st.error("Please fill in both name and DOB fields.")
         months.append((month_num, year_for_month, meanings.get(pm,"—")))
     return months
 
