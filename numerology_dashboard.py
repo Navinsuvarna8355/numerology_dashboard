@@ -167,6 +167,40 @@ if st.button("Generate Full Report"):
             st.write(f"**Name Number:** {name_num}")
             st.write(f"**Life Path Number:** {life_path}")
             st.write(f"**Missing Numbers in Lo Shu Grid:** {missing_nums if missing_nums else 'None'}")
+            st.write(f"**Session ID:** {session_id} | **IST Time:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+
+            # Remedy
+            st.markdown(f"### 🔮 Lal Kitab Remedy for {life_path}")
+            st.info(get_remedy(life_path))
+
+            # Baby Names
+            st.markdown(f"### 👶 Dual‑Filter Lucky Baby Names:")
+            name_pool = girl_names if gender == "Girl" else boy_names if gender == "Boy" else girl_names + boy_names
+            dual_suggestions = suggest_names_dual_filter(name_pool, dob)
+            if dual_suggestions:
+                sel = st.selectbox("Select from dual‑filter suggestions", [f"{nm} → {rt}" for nm, rt in dual_suggestions])
+                st.success(f"Selected: {sel}")
+            else:
+                st.warning("No matching names found.")
+
+            # Compatibility
+            compat_list = []
+            if st.checkbox("🔍 Check Existing Name Compatibility"):
+                other_name = st.text_input("Enter name to check:")
+                if other_name:
+                    other_num = name_to_number(other_name)
+                    score = 100 - abs(name_num - other_num) * 10
+                    compat_list.append((other_name, other_num, score))
+                    st.info(f"{other_name} → {other_num} | Compatibility Score: {score}%")
+
+            # Predictions
+            year, personal_year = yearly_cycle(life_path)
+            st.markdown(f"### 📅 Personal Year {            session_id = uuid.uuid4().hex[:8]
+
+            st.subheader("📜 Numerology Report")
+            st.write(f"**Name Number:** {name_num}")
+            st.write(f"**Life Path Number:** {life_path}")
+            st.write(f"**Missing Numbers in Lo Shu Grid:** {missing_nums if missing_nums else 'None'}")
 
             # Remedy
             st.markdown(f"### 🔮 Lal Kitab Remedy for {life_path}")
