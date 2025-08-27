@@ -13,6 +13,9 @@ with col1:
 with col2:
     name = st.text_input("Enter Full Name")
 
+# Submit Button
+submitted = st.button("🔍 Analyze")
+
 # ------------------ CORE FUNCTIONS ------------------
 def extract_digits(dob, name):
     digits = list(dob)
@@ -58,37 +61,45 @@ def compatibility_score(name1, name2):
 
 def growth_tracker(dob):
     today = datetime.datetime.today()
-    birth = datetime.datetime.strptime(dob, "%d%m%Y")
-    age = today.year - birth.year
-    personal_year = (sum(map(int, str(today.year))) + sum(map(int, dob))) % 9 or 9
-    return age, personal_year
+    try:
+        birth = datetime.datetime.strptime(dob, "%d%m%Y")
+        age = today.year - birth.year
+        personal_year = (sum(map(int, str(today.year))) + sum(map(int, dob))) % 9 or 9
+        return age, personal_year
+    except:
+        return None, None
 
 # ------------------ OUTPUT ------------------
-if dob and name:
-    digits = extract_digits(dob, name)
-    grid = generate_lusho_grid(digits)
-    missing = [num for num, val in grid.items() if val == 0]
+if submitted:
+    if len(dob) == 8 and name:
+        digits = extract_digits(dob, name)
+        grid = generate_lusho_grid(digits)
+        missing = [num for num, val in grid.items() if val == 0]
 
-    st.subheader("📊 Lusho Grid")
-    st.write(grid)
+        st.subheader("📊 Lusho Grid")
+        st.write(grid)
 
-    st.subheader("❌ Missing Numbers")
-    st.write(missing)
+        st.subheader("❌ Missing Numbers")
+        st.write(missing)
 
-    st.subheader("🧘 Lal Kitab Remedies")
-    st.write(lal_kitab_remedies(missing))
+        st.subheader("🧘 Lal Kitab Remedies")
+        st.write(lal_kitab_remedies(missing))
 
-    st.subheader("💼 Career Suggestions")
-    st.write(career_suggestions(grid))
+        st.subheader("💼 Career Suggestions")
+        st.write(career_suggestions(grid))
 
-    st.subheader("❤️ Compatibility Checker")
-    partner_name = st.text_input("Enter Partner's Name")
-    if partner_name:
-        score = compatibility_score(name, partner_name)
-        st.write(f"Compatibility Score: {score}/9")
+        st.subheader("❤️ Compatibility Checker")
+        partner_name = st.text_input("Enter Partner's Name")
+        if partner_name:
+            score = compatibility_score(name, partner_name)
+            st.write(f"Compatibility Score: {score}/9")
 
-    st.subheader("📈 Personal Growth Tracker")
-    age, personal_year = growth_tracker(dob)
-    st.write(f"Age: {age} years")
-    st.write(f"Current Personal Year: {personal_year}")
-
+        st.subheader("📈 Personal Growth Tracker")
+        age, personal_year = growth_tracker(dob)
+        if age:
+            st.write(f"Age: {age} years")
+            st.write(f"Current Personal Year: {personal_year}")
+        else:
+            st.error("Invalid DOB format. Please use DDMMYYYY.")
+    else:
+        st.warning("Please enter valid DOB (DDMMYYYY) and Name before analyzing.")
